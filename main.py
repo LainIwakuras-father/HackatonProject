@@ -1,30 +1,16 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from database import SessionLocal, engine,Base
-from models import Contact
-from schemas import ContactCreate, Contact as ContactSchema
+import uvicorn
+from fastapi import FastAPI
+
+from database import  engine
+from routers import router
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title='TaskTracker')
 
 
-
-app = FastAPI()
-
+app.include_router(router)
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@app.post("/contacts/", response_model=ContactSchema)
-def create_contact(contact: ContactCreate, db: Session = Depends(get_db)):
-    db_contact = Contact(name=contact.name, email=contact.email, phone=contact.phone)
-    db.add(db_contact)
-    db.commit()
-    db.refresh(db_contact)
-    return db_contact
-
-@app.get("/contacts/{contact_id}", response_model=ContactSchema)
-def read_contact(contact_id: int, db: Session = Depends(get_db)):
-    return db.query(Contact).filter(Contact.id == contact_id).first()
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
